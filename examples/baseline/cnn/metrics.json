@@ -1,0 +1,15 @@
+{
+  "model": "cnn",
+  "seed": 42,
+  "train_samples": 55000,
+  "validation_samples": 5000,
+  "test_samples": 10000,
+  "test": {
+    "accuracy": 0.919,
+    "precision": 0.9216417502428902,
+    "recall": 0.9181755118587411,
+    "f1": 0.9186702107157789,
+    "support": 10000,
+    "loss": 0.29108926869501117
+  }
+}

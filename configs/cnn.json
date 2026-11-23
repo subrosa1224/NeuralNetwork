@@ -1,0 +1,15 @@
+{
+  "model": "cnn",
+  "num_filters": 4,
+  "kernel_size": 3,
+  "stride": 1,
+  "padding": 1,
+  "loss": "cross_entropy",
+  "learning_rate": 0.02,
+  "epochs": 3,
+  "batch_size": 64,
+  "seed": 42,
+  "validation_size": 5000,
+  "data_dir": "data",
+  "output_dir": "results/cnn"
+}

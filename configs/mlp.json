@@ -1,0 +1,13 @@
+{
+  "model": "mlp",
+  "hidden_sizes": [128, 64],
+  "activation": "relu",
+  "loss": "cross_entropy",
+  "learning_rate": 0.05,
+  "epochs": 5,
+  "batch_size": 64,
+  "seed": 42,
+  "validation_size": 5000,
+  "data_dir": "data",
+  "output_dir": "results/mlp"
+}

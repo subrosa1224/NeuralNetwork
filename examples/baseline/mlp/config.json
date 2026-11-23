@@ -1,0 +1,22 @@
+{
+  "model": "mlp",
+  "hidden_sizes": [
+    128,
+    64
+  ],
+  "activation": "relu",
+  "num_filters": 4,
+  "kernel_size": 3,
+  "stride": 1,
+  "padding": 1,
+  "loss": "cross_entropy",
+  "learning_rate": 0.05,
+  "epochs": 5,
+  "batch_size": 64,
+  "seed": 42,
+  "validation_size": 5000,
+  "train_limit": null,
+  "test_limit": null,
+  "data_dir": "data",
+  "output_dir": "results/mlp"
+}

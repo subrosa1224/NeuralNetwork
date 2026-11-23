@@ -1,24 +1,30 @@
+from pathlib import Path
+
 import numpy as np
-import matplotlib.pyplot as plt
 
 def save_model_params(params_dict, filepath="results/model_params.npz"):
     """使用 NumPy 的 .npz 文件格式保存模型参数"""
+    Path(filepath).parent.mkdir(parents=True, exist_ok=True)
     np.savez(filepath, **params_dict)
     print(f"模型参数已成功保存至: {filepath}")
 
 def load_model_params(filepath="results/model_params.npz"):
     """从 .npz 文件中加载模型参数"""
-    loaded = np.load(filepath)
-    params = {key: loaded[key] for key in loaded.files}
+    with np.load(filepath, allow_pickle=False) as loaded:
+        params = {key: loaded[key] for key in loaded.files}
     print(f"模型参数已从 {filepath} 加载成功！")
     return params
 
-def predict_and_show(model_forward_fn, X_test, y_test=None, num_samples=5):
+def predict_and_show(model_forward_fn, X_test, y_test=None, num_samples=5,
+                     output_path=None, show=True, seed=None):
     """
     模型预测与可视化展示函数（展示真实数字与预测数字）
     """
-    # 随机抽取指定数量的测试样本
-    indices = np.random.choice(X_test.shape[0], num_samples, replace=False)
+    import matplotlib.pyplot as plt
+
+    if not 1 <= num_samples <= X_test.shape[0]:
+        raise ValueError("num_samples 必须介于 1 和测试样本数量之间")
+    indices = np.random.default_rng(seed).choice(X_test.shape[0], num_samples, replace=False)
     sample_images = X_test[indices]
     true_labels = y_test[indices] if y_test is not None else None
 
@@ -33,20 +39,23 @@ def predict_and_show(model_forward_fn, X_test, y_test=None, num_samples=5):
         print(f"样本 [{i+1}] -> {t_str} | 预测数字: {pred_labels[i]}")
     print("==========================================\n")
 
-    # 处理图像用于画图展示
-    if sample_images.ndim == 2 and sample_images.shape[1] == 784:
-        vis_images = sample_images.reshape(-1, 28, 28)
-    else:
-        vis_images = sample_images.squeeze()
+    # 保留批次维；单张 CNN 图片不能使用 squeeze() 删除所有单例维度。
+    vis_images = sample_images.reshape(num_samples, 28, 28)
 
     # 使用 Matplotlib 可视化展示手写数字图片与预测
-    plt.figure(figsize=(12, 3))
+    figure, axes = plt.subplots(1, num_samples, figsize=(2 * num_samples, 3), squeeze=False)
     for i in range(num_samples):
-        plt.subplot(1, num_samples, i + 1)
-        plt.imshow(vis_images[i], cmap='gray')
+        axis = axes[0, i]
+        axis.imshow(vis_images[i], cmap='gray')
         t_val = true_labels[i] if true_labels is not None else '?'
-        plt.title(f"True: {t_val}\nPred: {pred_labels[i]}", fontsize=10)
-        plt.axis('off')
+        axis.set_title(f"True: {t_val}\nPred: {pred_labels[i]}", fontsize=10)
+        axis.axis('off')
     
-    plt.tight_layout()
-    plt.show()
+    figure.tight_layout()
+    if output_path is not None:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        figure.savefig(output_path, dpi=150, bbox_inches="tight")
+    if show:
+        plt.show()
+    plt.close(figure)
+    return figure
