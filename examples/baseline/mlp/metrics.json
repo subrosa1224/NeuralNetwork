@@ -1,0 +1,15 @@
+{
+  "model": "mlp",
+  "seed": 42,
+  "train_samples": 55000,
+  "validation_samples": 5000,
+  "test_samples": 10000,
+  "test": {
+    "accuracy": 0.9631,
+    "precision": 0.9627531104751362,
+    "recall": 0.9633193014164683,
+    "f1": 0.9629134094077489,
+    "support": 10000,
+    "loss": 0.12028545514415152
+  }
+}
