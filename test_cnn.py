@@ -1,122 +1,50 @@
-
 import unittest
+
 import numpy as np
-from core.conv import Conv2D
+
+from core.losses import CrossEntropyLoss
+from models.cnn import CNN
 
 
-class TestConv2D(unittest.TestCase):
-
-    def test_forward(self):
-        conv = Conv2D(1, 1, 2)
-
-        conv.W[:] = np.array([
-            [[[1.0, 0.0],
-              [0.0, -1.0]]]
-        ])
-        conv.b[:] = 0
-
-        x = np.arange(1, 10, dtype=float)
-        x = x.reshape(1, 1, 3, 3)
-
-        y = conv.forward(x)
-
-        expected = np.full((1, 1, 2, 2), -4.0)
-
-        np.testing.assert_allclose(y, expected)
-
-    def test_multi_channel(self):
-        conv = Conv2D(
-            2, 3, 3,
-            stride=2,
-            padding=1
-        )
-
-        x = np.random.randn(2, 2, 5, 6)
-
-        y = conv.forward(x)
-
-        self.assertEqual(y.shape, (2, 3, 3, 3))
-
-        dx = conv.backward(np.ones_like(y))
-
-        self.assertEqual(dx.shape, x.shape)
-
-        for param, grad in conv.parameters():
-            self.assertEqual(param.shape, grad.shape)
-
-    def test_gradient(self):
+class TestCNN(unittest.TestCase):
+    def setUp(self):
         np.random.seed(3)
+        self.model = CNN(input_shape=(1, 4, 4), num_filters=2, num_classes=3)
+        self.images = np.random.randn(2, 1, 4, 4)
+        self.labels = np.array([0, 2])
 
-        conv = Conv2D(2, 3, 3, stride=2, padding=1)
-        x = np.random.randn(2, 2, 4, 5)
+    def test_forward_and_backward(self):
+        logits = self.model.forward(self.images)
+        self.assertEqual(logits.shape, (2, 3))
+        loss = CrossEntropyLoss()
+        loss.forward(logits, self.labels)
+        gradient = self.model.backward(loss.backward())
+        self.assertEqual(gradient.shape, self.images.shape)
+        for parameter, parameter_gradient in self.model.parameters():
+            self.assertEqual(parameter.shape, parameter_gradient.shape)
 
-        y = conv.forward(x)
-        upstream = np.random.randn(*y.shape)
+    def test_full_model_gradients(self):
+        loss = CrossEntropyLoss()
+        loss.forward(self.model.forward(self.images), self.labels)
+        input_gradient = self.model.backward(loss.backward()).copy()
+        checks = [
+            (parameter, gradient.copy(), (0,) * parameter.ndim)
+            for parameter, gradient in self.model.parameters()
+        ]
+        checks.append((self.images, input_gradient, (0, 0, 1, 1)))
+        for parameter, gradient, index in checks:
+            original = parameter[index]
+            parameter[index] = original + 1e-6
+            plus = loss.forward(self.model.forward(self.images), self.labels)
+            parameter[index] = original - 1e-6
+            minus = loss.forward(self.model.forward(self.images), self.labels)
+            parameter[index] = original
+            np.testing.assert_allclose((plus - minus) / 2e-6, gradient[index], rtol=1e-5, atol=1e-6)
 
-        dx = conv.backward(upstream)
-
-        dW = conv.dW.copy()
-        db = conv.db.copy()
-
-        eps = 1e-6
-
-        def loss():
-            return np.sum(conv.forward(x) * upstream)
-
-        # 检查卷积核梯度
-        idx = (0, 0, 0, 0)
-        old = conv.W[idx]
-
-        conv.W[idx] = old + eps
-        plus = loss()
-
-        conv.W[idx] = old - eps
-        minus = loss()
-
-        conv.W[idx] = old
-
-        numerical = (plus - minus) / (2 * eps)
-
-        np.testing.assert_allclose(
-            numerical, dW[idx], rtol=1e-5, atol=1e-6
-        )
-
-        # 检查偏置梯度
-        idx = 0
-        old = conv.b[idx]
-
-        conv.b[idx] = old + eps
-        plus = loss()
-
-        conv.b[idx] = old - eps
-        minus = loss()
-
-        conv.b[idx] = old
-
-        numerical = (plus - minus) / (2 * eps)
-
-        np.testing.assert_allclose(
-            numerical, db[idx], rtol=1e-5, atol=1e-6
-        )
-
-        # 检查输入梯度
-        idx = (0, 0, 0, 0)
-        old = x[idx]
-
-        x[idx] = old + eps
-        plus = loss()
-
-        x[idx] = old - eps
-        minus = loss()
-
-        x[idx] = old
-
-        numerical = (plus - minus) / (2 * eps)
-
-        np.testing.assert_allclose(
-            numerical, dx[idx], rtol=1e-5, atol=1e-6
-        )
+    def test_rejects_missing_channel_dimension(self):
+        with self.assertRaises(ValueError):
+            self.model.forward(self.images[:, 0])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

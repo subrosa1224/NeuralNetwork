@@ -1,0 +1,22 @@
+{
+  "model": "cnn",
+  "hidden_sizes": [
+    128,
+    64
+  ],
+  "activation": "relu",
+  "num_filters": 2,
+  "kernel_size": 3,
+  "stride": 1,
+  "padding": 1,
+  "loss": "cross_entropy",
+  "learning_rate": 0.05,
+  "epochs": 1,
+  "batch_size": 32,
+  "seed": 42,
+  "validation_size": 200,
+  "train_limit": 1000,
+  "test_limit": 500,
+  "data_dir": "data",
+  "output_dir": "outputs/mnist_member5_real"
+}
